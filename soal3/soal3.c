@@ -8,85 +8,94 @@
 #include <unistd.h>
 #include <dirent.h>
 
-pthread_t tid[3];
-int n; char *arr[100];
+pthread_t tid[100];
+char old[100], new[100],drit[100];
 
 const char *getExt(const char *fName) {
-  char *dot = strrchr(fName, '.');
+  int j=0; char *dot = strrchr(fName, '.');
   if(!dot || dot == fName) return "Unknown";
-  int j=0; while(dot[j]) {
-    dot[j]=tolower(dot[j]); j++;}
+  while(dot[j]) { dot[j]=tolower(dot[j]); j++; }
   return dot + 1;
 }
 
+int isFile(char *path){
+  struct stat path_stat;
+  stat(path, &path_stat);
+  return S_ISREG(path_stat.st_mode);
+}
+
 void *cat(void *arg){
-  pthread_t id = pthread_self();
-  int i; char ext[10],cwd[100],oldD[100],newD[100];
+  char fileN[50],ext[10],oldP[100],newP[100],dirE[100];
+  strcpy(fileN,(char *)arg);
+  printf("%s\n",fileN);
+  sprintf(oldP,"%s%s",old,fileN); printf("%s\n",oldP);
 
-  if(pthread_equal(id,tid[0])) {
-    for(i=0; i<n; i++) {
-      strcpy(ext,getExt(arr[i]));
-      DIR* dir = opendir(ext);
-      if(dir==0) {
-        mkdir(ext,0777);
-      }
-      sprintf(newD,"%s/%s",ext,arr[i]);
-      rename(arr[i],newD);
-    }
-  }
+  if(isFile(oldP)) {
+    strcpy(ext,getExt(fileN)); printf("%s\n",ext);
 
-  else if(pthread_equal(id,tid[1])) {
-    DIR* dir = opendir(arr[0]); 
-    struct dirent *d;
-    while((d = readdir(dir))!=NULL) {
-      sprintf(oldD,"%s/%s",arr[0],d->d_name);
-      strcpy(ext,getExt(d->d_name));
-      DIR* dir = opendir(ext);
-      if(dir==0) {
-        mkdir(ext,0777);
-      }
-      sprintf(newD,"%s/%s",ext,d->d_name);
-      rename(oldD,newD);
+    sprintf(dirE,"%s%s",drit,ext);
+    DIR* dir = opendir(dirE);
+    if(dir==0) {
+      mkdir(dirE,0777);  printf("%s\n",dirE);
     }
-  }
 
-  else if(pthread_equal(id,tid[2])) {
-    getcwd(cwd,sizeof(cwd));
-    chdir("..");
-    DIR* dir = opendir(cwd);
-    struct dirent *d;
-    while((d = readdir(dir))!=NULL) {
-      strcpy(ext,getExt(d->d_name));
-      chdir(cwd); DIR* dir = opendir(ext);
-      if(dir==0) {
-        mkdir(ext,0777);
-      }
-      sprintf(newD,"%s/%s",ext,d->d_name);
-      rename(d->d_name,newD); chdir("..");
-    }
+    sprintf(newP,"%s%s/%s",new,ext,fileN);
+    rename(oldP,newP);
   }
   return NULL;
 }
 
-
 int main(int argc, char *argv[]) {
+  int x,err; char file[50];
+  printf("11\n");
 
-  n=argc-2; int x;
-  *arr=(char *)malloc(n*sizeof(char));
-  for(x=0; x<n; x++) strcpy(arr[x],argv[x+2]);
+  if(strcmp(argv[1],"-f")==0) {
+    int n=0; strcpy(old,""); strcpy(new,""); strcpy(drit,""); printf("12\n");
+    while(n != (argc-2)) { printf("13\n");
+      err=pthread_create(&tid[n],NULL,&cat,(void *)argv[n+2]);
+      n++;
+    }
+    n=0; printf("14\n");
+    while(n != (argc-2)) { printf("15\n");
+       pthread_join(tid[n],NULL);
+       n++;
+    }
+   exit(0);
+  }
 
-  int err;
-  if(strcmp(argv[1],"-f")==0) err=pthread_create(&tid[0],NULL,&cat,NULL);
+  else if(strcmp(argv[1],"-d")==0) {
+    DIR* dir = opendir(argv[2]);  printf("12\n");
+    struct dirent *d; int n=0;
+    sprintf(old,"%s/",argv[2]);  strcpy(new,""); strcpy(drit,"");
+    while((d = readdir(dir))!=NULL) { printf("13\n");
+      err=pthread_create(&tid[n],NULL,&cat,(void *)d->d_name);
+      n++;
+    }
+    printf("14\n");
+    while(n) { printf("15\n");
+       pthread_join(tid[n-1],NULL);
+       n--;
+    }
+   exit(0);
+  }
 
-  else if(strcmp(argv[1],"-d")==0) err=pthread_create(&tid[1],NULL,&cat,NULL);
+  else if(strcmp(argv[1],"*")==0) {
+    getcwd(old,sizeof(old));
+    chdir("..");
+    DIR* dir = opendir(old);
+    struct dirent *d; int n=0;
+    sprintf(old,"%s/",old);  strcpy(new,old); strcpy(drit,old);
+    while((d = readdir(dir))!=NULL) { printf("13\n");
+      err=pthread_create(&tid[n],NULL,&cat,(void *)d->d_name);
+      n++;
+    }
+    printf("14\n");
+    while(n) { printf("15\n");
+       pthread_join(tid[n-1],NULL);
+       n--;
+    }
+   exit(0);
+  }
 
-  else if(strcmp(argv[1],"*")==0) err=pthread_create(&tid[2],NULL,&cat,NULL);
-
-  if(err!=0) printf("Failure: [%s]\n",strerror(err));
-
-  pthread_join(tid[0],NULL);
-  pthread_join(tid[1],NULL);
-  pthread_join(tid[2],NULL);
-  exit(0);
   return 0;
 }
