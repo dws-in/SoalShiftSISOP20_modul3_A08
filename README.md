@@ -17,46 +17,37 @@ Program `soal3.c` bisa di jalankan dalam 3 mode:
 #include <stdlib.h>
 #include <unistd.h>
 #include <dirent.h>
-
 pthread_t tid[100];
 char old[100], new[100],drit[100];
-
 const char *getExt(const char *fName) {
   int j=0; char *dot = strrchr(fName, '.');
   if(!dot || dot == fName) return "Unknown";
   while(dot[j]) { dot[j]=tolower(dot[j]); j++; }
   return dot + 1;
 }
-
 int isFile(char *path){
   struct stat path_stat;
   stat(path, &path_stat);
   return S_ISREG(path_stat.st_mode);
 }
-
 void *cat(void *arg){
   char fileN[50],ext[10],oldP[100],newP[100],dirE[100];
   strcpy(fileN,(char *)arg);
   sprintf(oldP,"%s%s",old,fileN); 
-
   if(isFile(oldP)) {
     strcpy(ext,getExt(fileN)); 
-
     sprintf(dirE,"%s%s",drit,ext);
     DIR* dir = opendir(dirE);
     if(dir==0) {
       mkdir(dirE,0777); 
     }
-
     sprintf(newP,"%s%s/%s",new,ext,fileN);
     rename(oldP,newP);
   }
   return NULL;
 }
-
 int main(int argc, char *argv[]) {
   int x,err; char file[50];
-
   if(strcmp(argv[1],"-f")==0) {
     int n=0; strcpy(old,""); strcpy(new,""); strcpy(drit,""); 
     while(n != (argc-2)) { 
@@ -70,7 +61,6 @@ int main(int argc, char *argv[]) {
     }
    exit(0);
   }
-
   else if(strcmp(argv[1],"-d")==0) {
     DIR* dir = opendir(argv[2]); 
     struct dirent *d; int n=0;
@@ -78,15 +68,13 @@ int main(int argc, char *argv[]) {
     while((d = readdir(dir))!=NULL) { 
       err=pthread_create(&tid[n],NULL,&cat,(void *)d->d_name);
       n++;
-    }
-    
+    } 
     while(n) { 
        pthread_join(tid[n-1],NULL);
        n--;
     }
    exit(0);
   }
-
   else if(strcmp(argv[1],"*")==0) {
     getcwd(old,sizeof(old));
     chdir("..");
@@ -96,15 +84,13 @@ int main(int argc, char *argv[]) {
     while((d = readdir(dir))!=NULL) { 
       err=pthread_create(&tid[n],NULL,&cat,(void *)d->d_name);
       n++;
-    }
-    
+    }   
     while(n) { 
        pthread_join(tid[n-1],NULL);
        n--;
     }
    exit(0);
   }
-
   return 0;
 }`
      Dalam program ini terdapat 4 fungsi yaitu `getExt`, `isFile`, `*cat`, dan `main`. `getExt` digunakan untuk mendapatkan string ekstensi dari file. `isFile` digunakan untuk mengecek apakah path tersebut adalah file atau bukan. `*cat` digunakan untuk proses dalam thread. Setiap thread akan melakukan mengkategorikan 1 file saja. Dalam fungsi main 
