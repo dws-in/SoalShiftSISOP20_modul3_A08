@@ -51,8 +51,63 @@ void *cat(void *arg){
   return NULL;
 }
 ```
+`*cat` digunakan untuk proses dalam thread. Setiap thread akan melakukan mengkategorikan 1 file saja. Pemindahan file menggunakan `rename(oldP,newP)`.
+```c
+int main(int argc, char *argv[]) {
+  int x,err; char file[50];
 
-`*cat` digunakan untuk proses dalam thread. Setiap thread akan melakukan mengkategorikan 1 file saja. Dalam fungsi main mode akan diseleksi. Proses looping berjalan sesuai mode. Setelah itu thread dibuat untuk memproses 1 file tiap 1 kali pengulangan `err=pthread_create(&tid[n],NULL,&cat,(void *)argv[n+2]);`. Di dalam thread file dicek dengan fungsi `isFile` jika iya kemudian dicari ekstensinya dengan `getExt`, jika tidak maka akan keluar dari thread. Apabila directory dengan nama ekstensi tersebut belum ada maka dibuatlah directory. Lalu file dimasukkan kedalam directory tersebut `rename(oldP,newP);`. Setelah itu semua thread dijoin dan exit.
+  if(strcmp(argv[1],"-f")==0) {
+    int n=0; strcpy(old,""); strcpy(new,""); strcpy(drit,""); 
+    while(n != (argc-2)) { 
+      err=pthread_create(&tid[n],NULL,&cat,(void *)argv[n+2]);
+      n++;
+    }
+    n=0; 
+    while(n != (argc-2)) {
+       pthread_join(tid[n],NULL);
+       n++;
+    }
+   exit(0);
+  }
+
+  else if(strcmp(argv[1],"-d")==0) {
+    DIR* dir = opendir(argv[2]); 
+    struct dirent *d; int n=0;
+    sprintf(old,"%s/",argv[2]);  strcpy(new,""); strcpy(drit,"");
+    while((d = readdir(dir))!=NULL) { 
+      err=pthread_create(&tid[n],NULL,&cat,(void *)d->d_name);
+      n++;
+    }
+    
+    while(n) { 
+       pthread_join(tid[n-1],NULL);
+       n--;
+    }
+   exit(0);
+  }
+
+  else if(strcmp(argv[1],"*")==0) {
+    getcwd(old,sizeof(old));
+    chdir("..");
+    DIR* dir = opendir(old);
+    struct dirent *d; int n=0;
+    sprintf(old,"%s/",old);  strcpy(new,old); strcpy(drit,old);
+    while((d = readdir(dir))!=NULL) { 
+      err=pthread_create(&tid[n],NULL,&cat,(void *)d->d_name);
+      n++;
+    }
+    
+    while(n) { 
+       pthread_join(tid[n-1],NULL);
+       n--;
+    }
+   exit(0);
+  }
+
+  return 0;
+}
+```
+Dalam fungsi main, mode akan diseleksi. Proses looping berjalan sesuai mode. Setelah itu thread dibuat untuk memproses 1 file tiap 1 kali pengulangan `err=pthread_create(&tid[n],NULL,&cat,(void *)argv[n+2]);`. Setelah itu semua thread dijoin dan exit.
 
 
 
