@@ -12,7 +12,18 @@ Program `soal3.c` bisa di jalankan dalam 3 mode:
 2. Mode `-d`,  user bisa menginutkan 1 directory. Program akan mengkategorikan file di `path/to/directory` dan hasilnya akan disimpan di working directory di mana program C tersebut berjalan.
 3. Mode `*`, program akan mengkategorikan seluruh file yang ada di working directory ketika program tersebut dijalankan.
 
-Dalam program ini terdapat 4 fungsi yaitu `getExt`, `isFile`, `*cat`, dan `main`. `getExt` digunakan untuk mendapatkan string ekstensi dari file. `isFile` digunakan untuk mengecek apakah path tersebut adalah file atau bukan. `*cat` digunakan untuk proses dalam thread. Setiap thread akan melakukan mengkategorikan 1 file saja. Dalam fungsi main mode akan diseleksi. Proses looping berjalan sesuai mode. Setelah itu thread dibuat untuk memproses 1 file tiap 1 kali pengulangan `err=pthread_create(&tid[n],NULL,&cat,(void *)argv[n+2]);`. Di dalam thread file dicek dengan fungsi `isFile` jika iya kemudian dicari ekstensinya dengan `getExt`, jika tidak maka akan keluar dari thread. Apabila directory dengan nama ekstensi tersebut belum ada maka dibuatlah directory. Lalu file dimasukkan kedalam directory tersebut `rename(oldP,newP);`. Setelah itu semua thread dijoin dan exit.
+Dalam program ini terdapat 4 fungsi yaitu `getExt`, `isFile`, `*cat`, dan `main`. 
+```c
+const char *getExt(const char *fName) {
+  int j=0; char *dot = strrchr(fName, '.');
+  if(!dot || dot == fName) return "Unknown";
+  while(dot[j]) { dot[j]=tolower(dot[j]); j++; }
+  return dot + 1;
+}
+```
+`getExt` digunakan untuk mendapatkan string ekstensi dari file. `isFile` digunakan untuk mengecek apakah path tersebut adalah file atau bukan. `*cat` digunakan untuk proses dalam thread. Setiap thread akan melakukan mengkategorikan 1 file saja. Dalam fungsi main mode akan diseleksi. Proses looping berjalan sesuai mode. Setelah itu thread dibuat untuk memproses 1 file tiap 1 kali pengulangan `err=pthread_create(&tid[n],NULL,&cat,(void *)argv[n+2]);`. Di dalam thread file dicek dengan fungsi `isFile` jika iya kemudian dicari ekstensinya dengan `getExt`, jika tidak maka akan keluar dari thread. Apabila directory dengan nama ekstensi tersebut belum ada maka dibuatlah directory. Lalu file dimasukkan kedalam directory tersebut `rename(oldP,newP);`. Setelah itu semua thread dijoin dan exit.
+
+
 
 
 ## **Soal 4**
