@@ -21,7 +21,38 @@ const char *getExt(const char *fName) {
   return dot + 1;
 }
 ```
-`getExt` digunakan untuk mendapatkan string ekstensi dari file. `isFile` digunakan untuk mengecek apakah path tersebut adalah file atau bukan. `*cat` digunakan untuk proses dalam thread. Setiap thread akan melakukan mengkategorikan 1 file saja. Dalam fungsi main mode akan diseleksi. Proses looping berjalan sesuai mode. Setelah itu thread dibuat untuk memproses 1 file tiap 1 kali pengulangan `err=pthread_create(&tid[n],NULL,&cat,(void *)argv[n+2]);`. Di dalam thread file dicek dengan fungsi `isFile` jika iya kemudian dicari ekstensinya dengan `getExt`, jika tidak maka akan keluar dari thread. Apabila directory dengan nama ekstensi tersebut belum ada maka dibuatlah directory. Lalu file dimasukkan kedalam directory tersebut `rename(oldP,newP);`. Setelah itu semua thread dijoin dan exit.
+`getExt` digunakan untuk mendapatkan string ekstensi dari file. Di dalam fungsi ini mengambil string setelah keberadaan titik yang terakhir menggunakan `strrchr(fName, '.')` untuk mendapatkan extensi dan mengubahnya kedalam lower case semua.
+```c
+int isFile(char *path){
+  struct stat path_stat;
+  stat(path, &path_stat);
+  return S_ISREG(path_stat.st_mode);
+}
+```
+`isFile` digunakan untuk mengecek apakah path tersebut adalah file atau bukan dengan `S_ISREG(path_stat.st_mode)`.
+```c
+void *cat(void *arg){
+  char fileN[50],ext[10],oldP[100],newP[100],dirE[100];
+  strcpy(fileN,(char *)arg);
+  sprintf(oldP,"%s%s",old,fileN); 
+
+  if(isFile(oldP)) {
+    strcpy(ext,getExt(fileN)); 
+
+    sprintf(dirE,"%s%s",drit,ext);
+    DIR* dir = opendir(dirE);
+    if(dir==0) {
+      mkdir(dirE,0777); 
+    }
+
+    sprintf(newP,"%s%s/%s",new,ext,fileN);
+    rename(oldP,newP);
+  }
+  return NULL;
+}
+```
+
+`*cat` digunakan untuk proses dalam thread. Setiap thread akan melakukan mengkategorikan 1 file saja. Dalam fungsi main mode akan diseleksi. Proses looping berjalan sesuai mode. Setelah itu thread dibuat untuk memproses 1 file tiap 1 kali pengulangan `err=pthread_create(&tid[n],NULL,&cat,(void *)argv[n+2]);`. Di dalam thread file dicek dengan fungsi `isFile` jika iya kemudian dicari ekstensinya dengan `getExt`, jika tidak maka akan keluar dari thread. Apabila directory dengan nama ekstensi tersebut belum ada maka dibuatlah directory. Lalu file dimasukkan kedalam directory tersebut `rename(oldP,newP);`. Setelah itu semua thread dijoin dan exit.
 
 
 
